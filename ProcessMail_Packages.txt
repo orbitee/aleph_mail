@@ -1,0 +1,16 @@
+Packages Installed in this order
+Solaris Packages Needed For Solaris 8:
+   zlib
+   libxml2
+   libxslt
+Solaris 9 Packages:
+   libiconv-1.8-sol9-sparc-local
+Perl Modules
+   XML-NamespaceSupport-1.09
+   XML-SAX-0.12
+   XML-LibXML-Common-0.13
+   XML-LibXML-1.56
+   XML-LibXSLT-1.53
+   MailTools-1.67
+   MIME-Lite-3.01
+   Email-Valid-0.15

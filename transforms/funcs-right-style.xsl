@@ -1,0 +1,63 @@
+<xsl:stylesheet
+   xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+<xsl:output method="xml" indent="yes"/>
+
+   <!--xsl:version="1.0"-->
+
+
+<xsl:template name="display-not-empty-right-style">
+    <xsl:param name="label"/>
+    <xsl:param name="value"/>
+    <xsl:param name="bold"/>
+    <xsl:param name="italic"/>
+    <xsl:param name="underline"/>
+    <xsl:if test="$value !=''">
+    <xsl:call-template name="table-start-row"/>
+        <td width="40%"><b><xsl:value-of select="$label"/></b></td>
+        <td align="right"><xsl:value-of select="$value"/></td>
+    <xsl:call-template name="table-end-row"/>
+     </xsl:if>
+</xsl:template>
+
+<xsl:template name="display-always-right-style">
+    <xsl:param name="label"/>
+    <xsl:param name="value"/>
+    <xsl:param name="bold"/>
+    <xsl:param name="italic"/>
+    <xsl:param name="underline"/>
+    <xsl:call-template name="table-start-row"/>
+        <td width="40%"><b><xsl:value-of select="$label"/></b></td>
+        <td alignment="right"><xsl:value-of select="$value"/></td>
+    <xsl:call-template name="table-end-row"/>
+</xsl:template>
+
+<xsl:template name="display-not-empty-split-right-style">
+    <xsl:param name="label"/>
+    <xsl:param name="value"/>
+    <xsl:param name="bold"/>
+    <xsl:param name="italic"/>
+    <xsl:param name="underline"/>
+    <xsl:if test="$value !=''">
+    <xsl:call-template name="table-start-row"/>
+        <td width="40%"><b><xsl:value-of select="$label"/></b></td>
+        <td align="right"><xsl:value-of select="$value"/></td>
+    <xsl:call-template name="table-end-row"/>
+     </xsl:if>
+</xsl:template>
+
+<xsl:template name="display-always-split-right-style">
+    <xsl:param name="label"/>
+    <xsl:param name="value"/>
+    <xsl:param name="bold"/>
+    <xsl:param name="italic"/>
+    <xsl:param name="underline"/>
+    <xsl:call-template name="table-start-row"/>
+        <td width="40%"><b><xsl:value-of select="$label"/></b></td>
+        <td align="right"><xsl:value-of select="$value"/></td>
+    <xsl:call-template name="table-end-row"/>
+</xsl:template>
+
+
+
+</xsl:stylesheet>
+

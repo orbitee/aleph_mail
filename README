@@ -1,0 +1,195 @@
+Description
+This Perl script wrapped in a shell script sends Aleph email notices from the 
+server, rather than using the client print daemon.  Files are picked up from 
+a library's print directory based on print ID, similar to print daemon 
+functionality.  Leftover letters with no email address are left in the print 
+directory, in XML format, with a new print ID, for client pick up.
+    
+Author: Christine Moulen
+Additional author(s): Anthony Moulen
+Institution: Massachusetts Institute of Technology
+Year: 2009
+License: MIT License
+Short description: Use, modification and distribution of the code are 
+permitted provided the copyright notice, list of conditions and disclaimer 
+appear in all related material.
+
+Link to terms: Detailed license terms http://www.opensource.org/licenses/mit-license.php
+    
+Skill required for using this code:
+intermediate
+
+State
+Stable
+
+Solaris version was used through Aleph 19
+
+Linux version tested with Aleph 19, 20 and 22
+
+Programming language
+Perl, C-shell
+
+Software requirements
+Perl 5.8 or higher
+
+Solaris 9 Packages:
+   libiconv-1.8-sol9-sparc-local
+Perl Modules
+   XML-NamespaceSupport-1.09
+   XML-SAX-0.12
+   XML-LibXML-Common-0.13
+   XML-LibXML-1.56
+   XML-LibXSLT-1.53
+   MailTools-1.67
+   MIME-Lite-3.01
+   Email-Valid-0.15
+
+Newer versions of these packages may work, but this is what I have installed 
+and tested.
+
+Still on Solaris 8?  See ProcessMail_Packages.txt.
+
+Linux Perl Modules: (the others seem to be built in on RedHat)
+   XML-LibXML (Use a version compatible with your OS libxslt.  In our case, we 
+could not install the latest version of the Perl module.)
+   XML-LibXSLT (Use a version compatible with your OS libxslt.  In our case, we
+could not install the latest version of the Perl module.)
+   MIME-Lite
+   Email-Valid
+
+
+Screen captures
+N/A
+
+Author(s) homepage
+http://libraries.mit.edu
+
+Download
+
+Individual files (1.0 for Solaris)  
+process_mail.pl ,   process_mail.sh ,   mit_env.csh ,   mit_opts.csh
+
+All in one (including sample XSLT) (Solaris)  
+ mail.tar
+
+Individual files (2.0 for Linux)  
+process_mail_2.pl , process_mail_2.sh ,  debug.config ,  mit_env.csh , 
+mit_opts.csh 
+
+All in one (including sample XSLT) (Linux) 
+  mail_2.tar
+
+Individual files (2.1 for Linux)  
+process_mail_2.1.pl , process_mail_2.1.sh ,  debug.config ,  mit_env.csh , 
+mit_opts.csh 
+
+All in one (including sample XSLT) (Linux) 
+  mail_2.1.tar
+
+
+Working example
+N/A
+
+Using the following Ex Libris open interfaces
+XML output of Aleph notice and letter jobs, such as p_cir_11, p_cir_13, p_acq_14
+
+Changes
+Version 1.0
+May 6, 2009.  Initial posting to EL Commons.  Scripts have previously been 
+shared with other customers
+
+Version 2.0
+February 15, 2011.  Initial posting of Linux version to EL Commons.  Scripts 
+have previously been shared with other customers
+
+Version 2.1
+May 15, 2014. Incorporating some updates from Hans Breitenlohner at UMD.
+
+ - use of <form-format> to select templates
+ - modified parsing of filenames to handle multiple periods
+ - ability to send a Cc: based on a configuration value.
+
+
+Release notes
+
+Developers Network 2.1
+Slightly updated Linux version.  Scripts were updated to include some useful 
+changes, noted above, by Hans Breitenlohner.  Also tested with Aleph version 22.
+  No changes were needed specific to the Aleph version.
+
+EL Commons 2.0
+First Linux version.  Scripts were largely re-written in July 2010, moving 
+configuration options out to a separate file.  It may no longer be necessary to 
+edit the Perl script directly, unless local environmental changes are needed.  
+Tested with Aleph 19 on RedHat 4, and Aleph 20 on RedHat 5.  Going into 
+production use at MIT with Aleph 20 in March 2011.
+
+Previous known issue of lingering empty log files is now handled.  Empty log 
+files are deleted at the end of each run.
+
+EL Commons 1.0
+For those who have seen previous versions, this download includes handling to 
+email output that Aleph did not output for email.  E.g. emailing hold slips to 
+service desk staff.  Added January 2008.
+
+Prior to EL Commons release
+These scripts were originally written for Aleph version 16, and have been used 
+successfully, with minor modification, with versions 18 and 19.
+
+
+
+Installation instructions
+
+These scripts assume the following placement of the files.  If you put them 
+elsewhere, you may need to edit some pathnames within the scripts.  
+[Solaris: /export/home becomes Linux: /home]
+
+        /export/home/barton/mit_opts.csh
+        /export/home/barton/mit_env.csh
+        /export/home/barton/<version>/mail/process_mail.pl
+        /export/home/barton/<version>/mail/process_mail.sh
+        /export/home/barton/<version>/mail/transforms (all XSL files here, 
+rather than in $data_root/form_lng)
+
+        
+        Localize any necessary paths in all scripts or config files
+        Localize print ID's in the shell script.  For multi-ADM, add another 
+dlib and invoke the Perl script again.
+        Localize a number of variables at the top of the Perl script (1.0)
+        Create a config file from the samples, one for each print ID to be 
+handled. (2.0)
+
+
+        As provided, the script is run from cron, or on demand from the command 
+line, and has not been set up as an Aleph service.
+        cd /export/home/barton/v19/mail
+        (./process_mail.sh -v 19 >> log/process_mail.log) 2>log/process_mail.err
+
+ 
+
+TO DO list
+
+Known issues
+The script produces empty error log files (assuming no errors) with each run.  
+These ought to be cleaned up either immediately or periodically, but in an 
+automated way.  (Version 1.0)
+
+
+Comments
+Emails are in a multipart MIME format, including both plain text and HTML 
+parts.  It is up to the recipient's mail client preferences to display either 
+the text or HTML version.
+
+In the attached tar file are some sample XSL transforms.  We did a lot of 
+cleanup of the XSL provided by Ex Libris, removing extraneous table tagging and 
+the like.  Mainly, these helped the plain text format letters look better.
+
+The funcs*.xsl files could be taken from Ex Libris' defaults if you don't 
+like mine and don't want to write your own.  Just change the include path 
+in individual XSL notices.
+
+Notice that the other XSL files with familiar looking filenames only include 
+the funcs for HTML or plain format, and then one of the transform*.xsl files.  
+This makes it easy to maintain letters in both formats by editing just one 
+file, the transform, when changes are needed.
+

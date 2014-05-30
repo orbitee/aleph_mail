@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+
 #############  The MIT License #############################################
 # 
 # Copyright (c) 1997-2008, Christine Moulen and Massachuestts Institute of Technology
@@ -24,6 +25,7 @@
 #
 ############################################################################# 
 
+
 # Process ALEPH Batch files.
 # Written by: Anthony Moulen - ajmoulen@alum.mit.edu
 #             Christine Moulen - orbitee@mit.edu
@@ -40,12 +42,17 @@
 # 7  Jul 2010 by Christine Moulen - Delete empty err logs.
 # 8  Jul 2010 by Christine Moulen - Major rewrite, moving most vars
 #        out to a config file.
+# 15 May 1014 by Christine Moulen - Incorporating some changes from Hans 
+#        Breitenlohner @ University of Maryland.  
+#        - use of <form-format> to select templates
+#        - modified parsing of filenames to handle multiple periods
+#        - ability to send a Cc: based on a configuration value.
 
-require MIME::Lite;            # send email
-require Email::Valid;          # validate email address format
-require XML::LibXSLT;          # XSLT Tranformation Functions
-require XML::LibXML;           # XML parsering functions
-require English;               # convert some symbolic Perl vars to english
+use MIME::Lite;            # send email
+use Email::Valid;          # validate email address format
+use XML::LibXSLT;          # XSLT Tranformation Functions
+use XML::LibXML;           # XML parsering functions
+use English;               # convert some symbolic Perl vars to english
 use Getopt::Long qw(GetOptions);        # process command line options
 use Env;                       # import environmental variables
 
@@ -85,6 +92,7 @@ my $interval            = $vars->{'sleepsec'};
 my $batch_ext           = $vars->{'batchext'};
 my $log_save_days       = $vars->{'savedlogdays'};
 my $ext_email           = $vars->{'extemail'};
+my $ext_cc              = $vars->{'extcc'};
 my $ext_print           = $vars->{'extprint'};
 my $ext_stats           = $vars->{'extstats'};
 my $ext_extra           = $vars->{'extextra'};
@@ -131,7 +139,9 @@ foreach $BATCH_FILE (@BATCH_FILES){
 	chomp $myfile;
 	
 	# My processing files.
-	($basefile,$baseext) = split(/\./, $myfile);
+#	($basefile,$baseext) = split(/\./, $myfile);
+	$basefile = $myfile;
+	$basefile =~ s/\.[^.]*$// ;
 	$print_output = "$batch_dir\/$basefile.$print_ext";
 	$error_log = "$log_dir\/$basefile-$timestamp.$error_ext";
 	$result_log = "$log_dir\/$basefile-$timestamp.$result_ext";
@@ -233,8 +243,19 @@ sub process_stream {
 	my $source = $parser->parse_string($xml_stream);
 	my $root = $source->getDocumentElement;
 	$transformation_file = $root->findvalue('form-name');
-	my $plain_xslt = "$xslt_dir\/plain-$transformation_file.xsl";
-        my $html_xslt = "$xslt_dir\/$transformation_file.xsl";
+	$transformation_file_2 = "${transformation_file}-" . $root->findvalue('form-format');
+	my ($plain_xslt, $html_xslt);
+	if (-e "$xslt_dir/plain-${transformation_file_2}.xsl" ) {
+	    $plain_xslt = "$xslt_dir\/plain-$transformation_file_2.xsl";
+	} else {
+	    $plain_xslt = "$xslt_dir\/plain-$transformation_file.xsl";
+	}
+	if (-e "$xslt_dir/${transformation_file_2}.xsl" ) {
+	    $html_xslt = "$xslt_dir\/$transformation_file_2.xsl";
+	} else {
+	    $html_xslt = "$xslt_dir\/$transformation_file.xsl";
+	}
+	print "$plain_xslt\n$html_xslt\n";
         if ($batch_ext =~ m/_req/) {
             $to_address = $ext_email;
         } else {
@@ -282,10 +303,10 @@ sub append_stats{
 	   "If you are monitoring circulation emails, you should see this message every morning for courtesy, overdue, and lost notices.  Recall letters are sent 3 times each day, but sometimes there are no recalls.\n\n".
 	   "If you are monitoring acquisitions emails, you should see this message Monday through Friday mornings only.\n\n".
 	   "Contact Christine if you ever do not receive this message on schedule, as there could be a problem.\n\n".
-	   "Processed file: $myfile\n".
-	   "Sent $to_email_file email message(s)\n".
-	   "Sent $to_print_file messages to printout file\n".
-	   "Sent $to_drop_file messages to retry file\n";
+	   "Processed file: $myfile\n\n".
+	   "Sent $to_email_file email message(s)\n\n".
+	   "Sent $to_print_file messages to printout file\n\n".
+	   "Sent $to_drop_file messages to retry file\n\n";
        $my_message = MIME::Lite->new(
 		From            => $admin_address,
                 To              => $admin_address,
@@ -334,6 +355,11 @@ sub send_message
                 Type            => 'multipart/alternative',
                 Encoding        => '7bit'
                 );
+	if (defined $ext_cc) {
+	    $my_message->add(
+                Cc              => $ext_cc
+		);
+	}
         $my_message->attach(
                 Type            => 'TEXT',
 		Data		=> $plain_body,

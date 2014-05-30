@@ -120,7 +120,7 @@
           <xsl:with-param name="line" select="'Interlibrary Borrowing materials may NOT be renewed via Your Account.'"/>
      </xsl:call-template>
      <xsl:call-template name="generic-line-mit">
-          <xsl:with-param name="line" select="'Please do not reply to this message.  If you have questions or need help getting your password for Your Account, please call or stop by any MIT libraries service desk (http://libraries.mit.edu/phone) or email our Ask Us! service (http://libraries.mit.edu/ask).'"/>
+          <xsl:with-param name="line" select="'Please do not reply to this message.  If you have questions or need help accessing Your Account online, please call or stop by any MIT libraries service desk (http://libraries.mit.edu/phone) or email our Ask Us! service (http://libraries.mit.edu/ask).'"/>
        </xsl:call-template>
      <xsl:call-template name="generic-line-mit">
 	<xsl:with-param name="line" select="'Many thanks,'"/>

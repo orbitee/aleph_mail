@@ -132,7 +132,7 @@
    <xsl:param name="grid"/>
 	<xsl:if test="$line = 'salutation_string'">
 	<xsl:call-template name="new-line"/>
-	<xsl:text>Dear Sir/Ms,</xsl:text>
+	<xsl:text>Dear Sir/Madam,</xsl:text>
 	</xsl:if>
 	<xsl:if test="$line != 'salutation_string'">
             <xsl:value-of select="$line"/>
@@ -147,7 +147,7 @@
    <xsl:param name="grid"/>
 	<xsl:if test="$line = 'salutation_string'">
 	<xsl:call-template name="new-line"/>
-	<xsl:text>Dear Sir/Ms,</xsl:text>
+	<xsl:text>Dear Sir/Madam,</xsl:text>
 	</xsl:if>
 	<xsl:if test="$line != 'salutation_string'">
             <xsl:value-of select="$line"/>

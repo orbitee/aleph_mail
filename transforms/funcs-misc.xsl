@@ -97,7 +97,7 @@
 
        <xsl:choose>
              <xsl:when test="$grid='' and $line='salutation_string' or $first='salutation_string'">
-                <br/><br/>Dear Sir/Ms,<br/><br/>
+                <br/><br/>Dear Sir/Madam,<br/><br/>
                 <xsl:call-template name="close-row"/>
                 <xsl:call-template name="generic-line">
                    <xsl:with-param name="line" select="$rest"/>
@@ -107,7 +107,7 @@
                 </xsl:call-template>
              </xsl:when>
              <xsl:when test="$grid='' and contains($line,'salutation_string')">
-                <br/><br/>Dear Sir/Ms,<br/><br/>
+                <br/><br/>Dear Sir/Madam,<br/><br/>
                 <xsl:call-template name="close-row"/>
                  <xsl:variable name="rest_salut" select="substring-after($line,'salutation_string')"/>
                 <xsl:call-template name="generic-line">

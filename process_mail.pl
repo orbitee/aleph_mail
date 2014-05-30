@@ -24,7 +24,6 @@
 #
 ############################################################################# 
 
-
 # Process ALEPH Batch files.
 # Written by: Anthony Moulen - ajmoulen@alum.mit.edu
 #             Christine Moulen - orbitee@mit.edu
@@ -38,163 +37,78 @@
 # 05 Jul 2005 by Anthony Moulen - Modified to work with XML files
 # 18 Jul 2005 by Christine Moulen - Activating on Aleph server
 # 11 Aug 2006 by Christine Moulen - Updates for version 18
-# 14 Jan 2008 by Christine Moulen - hard-coded *_req print ID's to mail
-#                                   to configured email address, rather
-#                                   than one (not) found in the XML
-#                                   For mailing hold slips to staff
-#
+# 7  Jul 2010 by Christine Moulen - Delete empty err logs.
+# 8  Jul 2010 by Christine Moulen - Major rewrite, moving most vars
+#        out to a config file.
 
 require MIME::Lite;            # send email
 require Email::Valid;          # validate email address format
 require XML::LibXSLT;          # XSLT Tranformation Functions
 require XML::LibXML;           # XML parsering functions
 require English;               # convert some symbolic Perl vars to english
+use Getopt::Long qw(GetOptions);        # process command line options
 use Env;                       # import environmental variables
 
 Env::import();                 # equate env variables with Perl variables of same name
 
-# Debug Mode Settings
-# DEBUG_MODE  - Used to set the application into debug mode
-# DEBUG_EMAIL - Address used to send all notices to during a debug session
-# DEBUG_FROM  - Address put on the FROM line to receive returned mail
-# DEBUG_FILE  - File used for debug mode.
-# DEBUG_LOG   - Debug Log file.
-# DEBUG_DIR   - Directory to send debugging files.
+my $config;
+my %config;
+my @recipients = ();
+my @myargs = @ARGV;  
 
-#$DEBUG_MODE  = 1;
-$DEBUG_EMAIL = "orbitee\@mit.edu";
-$DEBUG_FROM  = "orbitee\@mit.edu";
-#$DEBUG_FILE  = "ovdsum_01_00.circ_email";
-$DEBUG_LOG   = "process.dbg";
-$DEBUG_DIR   = "$MIT_SCRIPT_BASE/mail/log";
-
-# Global Settings
-# SMTP_RELAY   - SMTP relay for sending email, comment out to use local sendmail.
-# ADMIN_ADDRESS- Address to send administrative messages to. (not in use)
-# BATCH_DIR    - Location of the batch files. 
-# BATCH_EXT    - Extention for batch files in this run
-# EXT_OPTS     - Options based on extension
-#              - email: Email address from which email is sent.
-#              - print: File extension needed for client to pick up file.
-#              - subject: Subject for the messages.
-# LOG_DIR      - Directory for sending log files
-# ERROR_EXT    - Extension to add at the end of error files.
-# RESULT_EXT   - Extension to add to the results log file.
-# XSLT_DIR     - Directory with the XSLT Transformation files. 
-
-$SMTP_RELAY   = "outgoing.mit.edu";
-#$ADMIN_ADDRESS = "orbitee\@mit.edu";
-# Switch these back on production/test environment
-$BATCH_DIR    = "$data_print";
-$BATCH_EXT    = "circ_email";
-%EXT_OPTS     = ("circ_email" => { 
-                       "email"   => "circulation\@mit.edu",
-		       "print"   => "circ_notic",
-		       "stats"   => "courtesy_stats",
-		       "admin"   => "circ_print\@mit.edu"
-		       },
-		 "circ_wait" => {
-		       "email"   => "circulation\@mit.edu",
-                       "print"   => "circ_notic",
-                       "stats"   => "courtesy_stats",
-                       "admin"   => "NONE"
-                       },
-                "eng_req" => { 
-                      "email"   => "bookpage-barker\@mit.edu",
-                      "print"   => "req_print",
-                      "stats"   => "req_stats",
-                      "admin"   => "NONE"
-                      },
-                "dew_req" => { 
-                      "email"   => "bookpage-dewey\@mit.edu",
-                      "print"   => "req_print",
-                      "stats"   => "req_stats",
-                      "admin"   => "NONE"
-                      },
-                "hay_req" => { 
-                      "email"   => "bookpage-hayden\@mit.edu",
-                      "print"   => "req_print",
-                      "stats"   => "req_stats",
-                      "admin"   => "NONE"
-                      },
-                "rtc_req" => { 
-                      "email"   => "bookpage-rotch\@mit.edu",
-                      "print"   => "req_print",
-                      "stats"   => "req_stats",
-                      "admin"   => "NONE"
-                      },
-                "aer_req" => { 
-                      "email"   => "bookpage-aero\@mit.edu",
-                      "print"   => "req_print",
-                      "stats"   => "req_stats",
-                      "admin"   => "NONE"
-                      },
-                "mus_req" => { 
-                      "email"   => "bookpage-lewis\@mit.edu",
-                      "print"   => "req_print",
-                      "stats"   => "req_stats",
-                      "admin"   => "NONE"
-                      },
-                "lin_req" => { 
-                      "email"   => "bookpage-lindgren\@mit.edu",
-                      "print"   => "req_print",
-                      "stats"   => "req_stats",
-                      "admin"   => "NONE"
-                      },
-		 "mono_email" => { 
-		       "email"   => "monoacq\@mit.edu",
-		       "print"   => "mono_acq",
-                       "stats"   => "mono_stats",
-		       "admin"   => "acq_print\@mit.edu"
-		       }
-		 );
-$LOG_DIR      = "$MIT_SCRIPT_BASE/mail/log";
-$ERROR_EXT    = "err";
-$RESULT_EXT   = "log";
-$XSLT_DIR     = "$MIT_SCRIPT_BASE/mail/transforms";
-
-# Show Usage Information
-if(defined $ARGV[0] && $ARGV[0] eq "usage"){
-        print "$0 [usage|debug] [<extension>] [<debugfile>]\n";
-	print "Available extentions: \n";
-	foreach $mykeys (keys %EXT_OPTS) {
-		print "\t $mykeys\n";
-	}
-	exit;
+# Process options or Show Usage Information
+GetOptions( "config=s" => \$config)
+        || die "ERROR: Couldn't process options\n";
+if(! -r $config){
+    die "\nusage: $0 --config=<config file>(required)\n\n";
 }
+
+my $vars                = readConfig($config);
+my $home_dir            = $vars->{'homedir'};
+my $bin_dir             = $vars->{'bindir'};
+my $xslt_dir            = $vars->{'xsltdir'};
+my $batch_dir           = $vars->{'batchdir'};
+my $log_dir             = $vars->{'logdir'};
+my $error_ext           = $vars->{'errorext'};
+my $result_ext          = $vars->{'resultext'};
+
+my $debug_mode          = $vars->{'debugmode'} || 0;
+my $debug_email         = $vars->{'debugemail'};
+my $debug_from          = $vars->{'debugfrom'};
+my $debug_file          = $vars->{'debugfile'};
+my $debug_log           = $vars->{'debuglog'};
+my $debug_dir           = $vars->{'debugdir'};
+
+my $smtp_relay          = $vars->{'smtprelay'};
+my $interval            = $vars->{'sleepsec'};
+
+my $batch_ext           = $vars->{'batchext'};
+my $log_save_days       = $vars->{'savedlogdays'};
+my $ext_email           = $vars->{'extemail'};
+my $ext_print           = $vars->{'extprint'};
+my $ext_stats           = $vars->{'extstats'};
+my $ext_extra           = $vars->{'extextra'};
+my $ext_admin           = $vars->{'extadmin'};
+
 
 # Process Arguments
-if((defined $ARGV[0] && $ARGV[0] eq "debug") || $DEBUG_MODE==1){
-	$DEBUG_MODE=1;
+if($debug_mode==1){
 	print "Entering Debug Mode.\n";
-	if(defined $ARGV[1]) {
-		$BATCH_EXT = $ARGV[1];
-	}
-	if(defined $ARGV[2]) {
-		$DEBUG_FILE=$ARGV[2];
-	}
-	$FROM_ADDRESS = $DEBUG_FROM;
-	open(DEBUG_LOG, "> $DEBUG_DIR\/$DEBUG_LOG") || 
+	print "Using $batch_ext as extension.\n";
+	$FROM_ADDRESS = $debug_from;
+	open(DEBUG_LOG, "> $debug_dir\/$debug_log") || 
 	    die "Error opening debug file.\n";
-	$ADMIN_ADDRESS = $DEBUG_FROM;
+	$admin_address = $debug_from;
 } else {
-	if(defined $ARGV[0]) {
-		$BATCH_EXT = $ARGV[0];
-	}
-	if($#ARGV == 1) {
-		print "Ignoring debug file argument, not in debug mode.\n";
-	}
-	$FROM_ADDRESS = $EXT_OPTS{$BATCH_EXT}->{"email"};
-	$ADMIN_ADDRESS = $EXT_OPTS{$BATCH_EXT}->{"admin"};
+	$FROM_ADDRESS = $ext_email;
+	$admin_address = $ext_admin;
 }
 
-print "Using $BATCH_EXT as extension.\n" if $DEBUG_MODE==1;
-
 # Build file list
-if(defined $DEBUG_FILE){
-	@BATCH_FILES = ($DEBUG_FILE);
+if(defined $debug_file){
+	@BATCH_FILES = ($debug_file);
 } else {
-	@BATCH_FILES = `ls $BATCH_DIR/*.$BATCH_EXT`; 
+	@BATCH_FILES = `ls $batch_dir/*.$batch_ext`; 
 }
 # A bunch of wierd time stuff.
 @temp = split ' ', `date`;
@@ -205,24 +119,24 @@ $year+=1900;
 $maildate = join ' ', $temp[0].',', $temp[2], $temp[1], $temp[5], $temp[3], $temp[4];
 # Format like 20050524-134350
 $timestamp= sprintf("%04d%02d%02d-%02d%02d%02d",$year,$mon,$mday,$hour,$min,$sec);
-$stats_file = "$LOG_DIR\/".$EXT_OPTS{$BATCH_EXT}->{"stats"}."-$year-$mon";
+$stats_file = "$log_dir\/$ext_stats-$year-$mon";
 open(STATS, ">> $stats_file") || die "Unable to open $stats_file for append.\n";
 
 # Process the files
 foreach $BATCH_FILE (@BATCH_FILES){
 	# Set our output files
-	$print_ext = $EXT_OPTS{$BATCH_EXT}->{"print"};
+	$print_ext = $ext_print;
 	@filetemp = split'/', $BATCH_FILE;
 	$myfile = pop @filetemp;
 	chomp $myfile;
 	
 	# My processing files.
 	($basefile,$baseext) = split(/\./, $myfile);
-	$print_output = "$BATCH_DIR\/$basefile.$print_ext";
-	$error_log = "$LOG_DIR\/$basefile-$timestamp.$ERROR_EXT";
-	$result_log = "$LOG_DIR\/$basefile-$timestamp.$RESULT_EXT";
-	$drop_file  = "$BATCH_DIR\/$basefile-$timestamp-err.$BATCH_EXT";
-        $working_file = "$BATCH_DIR\/$myfile";
+	$print_output = "$batch_dir\/$basefile.$print_ext";
+	$error_log = "$log_dir\/$basefile-$timestamp.$error_ext";
+	$result_log = "$log_dir\/$basefile-$timestamp.$result_ext";
+	$drop_file  = "$batch_dir\/$basefile-$timestamp-err.$batch_ext";
+        $working_file = "$batch_dir\/$myfile";
 
 	# Open our files	
 	next unless -s $working_file;  # Don't bother processing file of zero size
@@ -249,7 +163,6 @@ foreach $BATCH_FILE (@BATCH_FILES){
 	# Close our files.
 	close(IN);
 	close(PRINTOUT);
-	close(RESULTS);
 	close(DROPFILE);
 	
 	# Unlink the drop file if we didn't have any failed mailings.
@@ -259,10 +172,10 @@ foreach $BATCH_FILE (@BATCH_FILES){
 	
 	# Move processed file to save directory.
 	$save_dir = sprintf("%s/save-%04d-%02d-%02d",
-			    $BATCH_DIR, $year, $mon, $mday);
+			    $batch_dir, $year, $mon, $mday);
 	mkdir "$save_dir";
 	eval{
-	    rename ("$BATCH_DIR\/$myfile",
+	    rename ("$batch_dir\/$myfile",
 		    "$save_dir\/$myfile.$timestamp" );
 	} ;
 	print ERRORS "Unable to move file $myfile - $EVAL_ERROR.\n"
@@ -279,6 +192,12 @@ foreach $BATCH_FILE (@BATCH_FILES){
 	}
 	# Finally close the errors file.
 	close(ERRORS);
+
+		# Unlink the errors file if we didn't have any errors.
+	if ( -z "$error_log") {
+		unlink "$error_log";
+	}
+
 }
 
 # Hurrah we reached the end!
@@ -304,6 +223,7 @@ sub processing_loop
 	}
     }
     &process_stream;
+    close(RESULTS);
     &append_stats;
 }
 
@@ -313,10 +233,10 @@ sub process_stream {
 	my $source = $parser->parse_string($xml_stream);
 	my $root = $source->getDocumentElement;
 	$transformation_file = $root->findvalue('form-name');
-	my $plain_xslt = "$XSLT_DIR\/plain-$transformation_file.xsl";
-        my $html_xslt = "$XSLT_DIR\/$transformation_file.xsl";
-        if ($BATCH_EXT =~ m/_req/) {
-            $to_address = $EXT_OPTS{$BATCH_EXT}->{"email"};
+	my $plain_xslt = "$xslt_dir\/plain-$transformation_file.xsl";
+        my $html_xslt = "$xslt_dir\/$transformation_file.xsl";
+        if ($batch_ext =~ m/_req/) {
+            $to_address = $ext_email;
         } else {
 	    $to_address = $root->findvalue('email-address');
 	}
@@ -356,7 +276,7 @@ sub append_stats{
    # Append stats to stat file.
    print STATS "$timestamp $myfile $to_email_file $to_print_file $to_drop_file.\n";
 
-   if ($ADMIN_ADDRESS ne "NONE") {
+   if ($admin_address ne "NONE") {
    # Email File Stats to Administrators
        $email_body = "This message is to inform you that batch emails from Aleph have been sent.\n\n".
 	   "If you are monitoring circulation emails, you should see this message every morning for courtesy, overdue, and lost notices.  Recall letters are sent 3 times each day, but sometimes there are no recalls.\n\n".
@@ -367,13 +287,20 @@ sub append_stats{
 	   "Sent $to_print_file messages to printout file\n".
 	   "Sent $to_drop_file messages to retry file\n";
        $my_message = MIME::Lite->new(
-		From            => $ADMIN_ADDRESS,
-                To              => $ADMIN_ADDRESS,
+		From            => $admin_address,
+                To              => $admin_address,
 		Subject         => "$0 processing log.",
                 Datestamp       => 'false',
                 Date            => $maildate,
-                Data            => $email_body
-				  );
+		Data		=> $email_body,
+                Type            => 'TEXT'
+                );
+       if ($ext_extra eq 'Y') {
+	   $my_message->attach(
+                Type            => 'TEXT',
+		Path		=> $result_log,
+		);
+       }
        # Attempt to send message
        eval{
 	   $my_message->send;
@@ -387,15 +314,15 @@ sub append_stats{
 sub send_message 
 {
 	# Check for Debug Mode
-	if ($DEBUG_MODE == 1){
+	if ($debug_mode == 1){
 		&print_log;   # dump to print file
 		$plain_body = "Email destined for: ". $to_address . "\n" . $plain_body;
 		print DEBUG_LOG "Message destined for $to_address.\n";
-		$to_address = $DEBUG_EMAIL;
+		$to_address = $debug_email;
 	} 
 	# Check for SMTP Relay setting.
-	if (defined $SMTP_RELAY){
-		MIME::Lite->send('smtp', $SMTP_RELAY, Timeout=>60);
+	if (defined $smtp_relay){
+		MIME::Lite->send('smtp', $smtp_relay, Timeout=>60);
 	}
 	# Build email message.
 	$my_message = MIME::Lite->new(
@@ -422,7 +349,7 @@ sub send_message
 		$my_message->send;
 	} ;
 	if ($EVAL_ERROR) {
-		sleep 15;
+		sleep $interval;
 		eval {
 			print ERRORS "Missed send attempt, retrying.\n";
 			$my_message->send;
@@ -454,6 +381,52 @@ sub drop_error_log
 	print DROPFILE $fileheader;
 	print DROPFILE $xml_stream;
 	print RESULTS "Message for $to_address added to error drop file for retry later.\n";
-	$to_drop_file++
+	$to_drop_file++;
 }
 
+sub readConfig{
+#------------------------------------------------------
+# returns hashref
+#------------------------------------------------------
+    my ($file) = @_;
+
+    if(! -r $file){
+        sendmail('error', "can't read $0 config file");
+        exit;
+    }
+    my $field;
+
+    open(FH, $file) or die "\nCan't read config file $file: $!";
+    while(<FH>){
+        next if(/^\s*$/ || /^\s*\#/);
+        if(/\s*\[(.+)\]/){
+            $field = $1;
+#	    print "$field ";
+             next;
+             }
+        if($field eq 'emailto'){
+            chomp $_;
+            $recipients[$#recipients+1] = $_;
+            next;
+            }
+        if(substr($_,0,1) eq '$'){
+                chomp;
+                $string = join '', '"', $_, '"';
+                $config{$field} = eval $string;
+#		print "$config{$field}\n";
+                next;
+                }
+        if(substr($_,0,1) eq "\'"){
+                $config{$field} = eval $_;
+#		print "$config{$field}\n";
+                next;
+                }
+        # clean data
+        s/\s//g;
+        $config{$field} = $_;
+#	print "$config{$field}\n";
+	    }
+    close(FH);
+
+    return \%config;
+}

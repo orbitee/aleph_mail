@@ -65,7 +65,13 @@
     <xsl:call-template name="blank-line"/>
     <xsl:call-template name="blank-line"/>
     <xsl:call-template name="generic-line-mit">
-       <xsl:with-param name="line" select="'Your request has initiated a recall that will shorten the current loan time.  This item will be available for pick up in one to two weeks depending on the date of the original loan. If other requests were placed before your own, those loans will be limited to two weeks.  You will receive an email notification when the item is available for pick-up. '"/>
+       <xsl:with-param name="line" select="'If you placed the request through Your Account, it has initiated a recall that will shorten the current loan time. This item will be available for pick up in one to two weeks depending on the date of the original loan. If other requests were placed before your own, those loans will be limited to two weeks.'"/>
+    </xsl:call-template>
+<xsl:call-template name="generic-line-mit">
+       <xsl:with-param name="line" select="'If you called a service desk to make the request, the current loan period may not have been shortened (depending on what you asked for).'"/>
+    </xsl:call-template>
+<xsl:call-template name="generic-line-mit">
+       <xsl:with-param name="line" select="'Via either method, you will receive an email notification when the item is available for pick-up.'"/>
     </xsl:call-template>
     <xsl:call-template name="blank-line"/>
     <xsl:call-template name="table-close"/>

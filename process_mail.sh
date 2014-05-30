@@ -24,12 +24,12 @@
 #
 ############################################################################# 
 
-
 # A script for sending ALEPH batch emails from the server, rather than
 # the client-mailer, which is less reliable.
 
 # History
 # 060811 (orbitee) Updating for version 18
+# 07-08-2010 (orbitee) Adjusting syntax for calling Perl script
 
 #################
 
@@ -41,18 +41,10 @@ endif
 
 dlib mit50
 
-# Are we in the test environment?
-if ( $?MIT_TEST ) then
-    set DEBUG = debug
-else
-    set DEBUG = ""
-endif
-
-# Insert a line for each print ID you want to handle
-
-$MIT_SCRIPT_BASE/mail/process_mail.pl $DEBUG circ_email
-$MIT_SCRIPT_BASE/mail/process_mail.pl $DEBUG circ_wait
-$MIT_SCRIPT_BASE/mail/process_mail.pl $DEBUG mono_email
+$MIT_SCRIPT_BASE/mail/process_mail.pl --config=$MIT_SCRIPT_BASE/mail/debug.config
+#$MIT_SCRIPT_BASE/mail/process_mail.pl --config=$MIT_SCRIPT_BASE/mail/circ_email.config
+#$MIT_SCRIPT_BASE/mail/process_mail.pl --config=$MIT_SCRIPT_BASE/mail/circ_wait.config
+#$MIT_SCRIPT_BASE/mail/process_mail.pl --config=$MIT_SCRIPT_BASE/mail/mono_email.config
 
 exit
 

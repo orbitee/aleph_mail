@@ -2,19 +2,19 @@
 
 
 #############  The MIT License #############################################
-# 
+#
 # Copyright (c) 1997-2008, Christine Moulen and Massachuestts Institute of Technology
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,7 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-############################################################################# 
+#############################################################################
 
 
 # Process ALEPH Batch files.
@@ -42,8 +42,8 @@
 # 7  Jul 2010 by Christine Moulen - Delete empty err logs.
 # 8  Jul 2010 by Christine Moulen - Major rewrite, moving most vars
 #        out to a config file.
-# 15 May 1014 by Christine Moulen - Incorporating some changes from Hans 
-#        Breitenlohner @ University of Maryland.  
+# 15 May 2014 by Christine Moulen - Incorporating some changes from Hans
+#        Breitenlohner @ University of Maryland.
 #        - use of <form-format> to select templates
 #        - modified parsing of filenames to handle multiple periods
 #        - ability to send a Cc: based on a configuration value.
@@ -61,7 +61,7 @@ Env::import();                 # equate env variables with Perl variables of sam
 my $config;
 my %config;
 my @recipients = ();
-my @myargs = @ARGV;  
+my @myargs = @ARGV;
 
 # Process options or Show Usage Information
 GetOptions( "config=s" => \$config)
@@ -104,7 +104,7 @@ if($debug_mode==1){
 	print "Entering Debug Mode.\n";
 	print "Using $batch_ext as extension.\n";
 	$FROM_ADDRESS = $debug_from;
-	open(DEBUG_LOG, "> $debug_dir\/$debug_log") || 
+	open(DEBUG_LOG, "> $debug_dir\/$debug_log") ||
 	    die "Error opening debug file.\n";
 	$admin_address = $debug_from;
 } else {
@@ -116,11 +116,11 @@ if($debug_mode==1){
 if(defined $debug_file){
 	@BATCH_FILES = ($debug_file);
 } else {
-	@BATCH_FILES = `ls $batch_dir/*.$batch_ext`; 
+	@BATCH_FILES = `ls $batch_dir/*.$batch_ext`;
 }
 # A bunch of wierd time stuff.
 @temp = split ' ', `date`;
-($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = 
+($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
     localtime(time);
 $mon++;
 $year+=1900;
@@ -137,7 +137,7 @@ foreach $BATCH_FILE (@BATCH_FILES){
 	@filetemp = split'/', $BATCH_FILE;
 	$myfile = pop @filetemp;
 	chomp $myfile;
-	
+
 	# My processing files.
 #	($basefile,$baseext) = split(/\./, $myfile);
 	$basefile = $myfile;
@@ -148,17 +148,17 @@ foreach $BATCH_FILE (@BATCH_FILES){
 	$drop_file  = "$batch_dir\/$basefile-$timestamp-err.$batch_ext";
         $working_file = "$batch_dir\/$myfile";
 
-	# Open our files	
+	# Open our files
 	next unless -s $working_file;  # Don't bother processing file of zero size
-	open(IN, "< $working_file") 
+	open(IN, "< $working_file")
 	    || die "No Input File $working_file available.\n";
-	open(ERRORS,">  $error_log") 
+	open(ERRORS,">  $error_log")
 	    || die "Error opening error log $error_log.\n";
-	open(PRINTOUT,"> $print_output.tmp") 
+	open(PRINTOUT,"> $print_output.tmp")
 	    || die "Error opening print output $print_output.\n";
-	open(RESULTS, "> $result_log") 
+	open(RESULTS, "> $result_log")
 	    || die "Error opening results log $result_log.\n";
-	open(DROPFILE, "> $drop_file") 
+	open(DROPFILE, "> $drop_file")
 	    || die "Error opening drop file $drop_file.\n";
 
 	# Global use variables.
@@ -169,17 +169,17 @@ foreach $BATCH_FILE (@BATCH_FILES){
         $subject_line = "";
 	# Call the processing loop.
 	&processing_loop;
-	
+
 	# Close our files.
 	close(IN);
 	close(PRINTOUT);
 	close(DROPFILE);
-	
+
 	# Unlink the drop file if we didn't have any failed mailings.
 	if ( -z "$drop_file") {
 		unlink "$drop_file";
 	}
-	
+
 	# Move processed file to save directory.
 	$save_dir = sprintf("%s/save-%04d-%02d-%02d",
 			    $batch_dir, $year, $mon, $mday);
@@ -197,7 +197,7 @@ foreach $BATCH_FILE (@BATCH_FILES){
 		rename ("$print_output.tmp",
 			"$print_output" );
 	    } ;
-	    print ERRORS "Unable to move $print_output tmp file - $EVAL_ERROR.\n" 
+	    print ERRORS "Unable to move $print_output tmp file - $EVAL_ERROR.\n"
 		if $EVAL_ERROR;
 	}
 	# Finally close the errors file.
@@ -326,13 +326,13 @@ sub append_stats{
        eval{
 	   $my_message->send;
        } ;
-       print ERRORS "Unable to send processing log - $EVAL_ERROR\n" 
+       print ERRORS "Unable to send processing log - $EVAL_ERROR\n"
 	   if $EVAL_ERROR;
    }
 }
 
 # Attempt to send message to the SMTP service.
-sub send_message 
+sub send_message
 {
 	# Check for Debug Mode
 	if ($debug_mode == 1){
@@ -340,7 +340,7 @@ sub send_message
 		$plain_body = "Email destined for: ". $to_address . "\n" . $plain_body;
 		print DEBUG_LOG "Message destined for $to_address.\n";
 		$to_address = $debug_email;
-	} 
+	}
 	# Check for SMTP Relay setting.
 	if (defined $smtp_relay){
 		MIME::Lite->send('smtp', $smtp_relay, Timeout=>60);

@@ -1,31 +1,4 @@
 #!/usr/bin/perl
-
-
-#############  The MIT License #############################################
-#
-# Copyright (c) 1997-2008, Christine Moulen and Massachuestts Institute of Technology
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-#
-#############################################################################
-
-
 # Process ALEPH Batch files.
 # Written by: Anthony Moulen - ajmoulen@alum.mit.edu
 #             Christine Moulen - orbitee@mit.edu
@@ -47,6 +20,8 @@
 #        - use of <form-format> to select templates
 #        - modified parsing of filenames to handle multiple periods
 #        - ability to send a Cc: based on a configuration value.
+# 05 Oct 2015 by Christine Moulen - Moved custom message text for admin
+#        message out to config file.
 
 use MIME::Lite;            # send email
 use Email::Valid;          # validate email address format
@@ -97,7 +72,7 @@ my $ext_print           = $vars->{'extprint'};
 my $ext_stats           = $vars->{'extstats'};
 my $ext_extra           = $vars->{'extextra'};
 my $ext_admin           = $vars->{'extadmin'};
-
+my $msg_text            = $vars->{'msgtext'} || '';
 
 # Process Arguments
 if($debug_mode==1){
@@ -299,10 +274,7 @@ sub append_stats{
 
    if ($admin_address ne "NONE") {
    # Email File Stats to Administrators
-       $email_body = "This message is to inform you that batch emails from Aleph have been sent.\n\n".
-	   "If you are monitoring circulation emails, you should see this message every morning for courtesy, overdue, and lost notices.  Recall letters are sent 3 times each day, but sometimes there are no recalls.\n\n".
-	   "If you are monitoring acquisitions emails, you should see this message Monday through Friday mornings only.\n\n".
-	   "Contact Christine if you ever do not receive this message on schedule, as there could be a problem.\n\n".
+       $email_body = "This message is to inform you that batch emails from Aleph have been sent.\n\n".$msg_text."\n\n".
 	   "Processed file: $myfile\n\n".
 	   "Sent $to_email_file email message(s)\n\n".
 	   "Sent $to_print_file messages to printout file\n\n".

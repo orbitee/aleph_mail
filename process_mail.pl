@@ -22,6 +22,8 @@
 #        - ability to send a Cc: based on a configuration value.
 # 05 Oct 2015 by Christine Moulen - Moved custom message text for admin
 #        message out to config file.
+# 06 Oct 2015 by Anthony Moulen - Modified config import to support multiple
+#        lines of text for a single variable.
 
 use MIME::Lite;            # send email
 use Email::Valid;          # validate email address format
@@ -274,7 +276,7 @@ sub append_stats{
 
    if ($admin_address ne "NONE") {
    # Email File Stats to Administrators
-       $email_body = "This message is to inform you that batch emails from Aleph have been sent.\n\n".$msg_text."\n\n".
+       $email_body = $msg_text."\n\n".
 	   "Processed file: $myfile\n\n".
 	   "Sent $to_email_file email message(s)\n\n".
 	   "Sent $to_print_file messages to printout file\n\n".
@@ -387,6 +389,7 @@ sub readConfig{
 # returns hashref
 #------------------------------------------------------
     my ($file) = @_;
+    my $processingString = 0;
 
     if(! -r $file){
         sendmail('error', "can't read $0 config file");
@@ -396,6 +399,17 @@ sub readConfig{
 
     open(FH, $file) or die "\nCan't read config file $file: $!";
     while(<FH>){
+# End Processing a block of text.
+        if($processingString==1) {
+          if($_ =~ m/\"\s*$/){
+            $processingString=0;
+            $config{$field} .= $_;
+            $config{$field} = eval $config{$field};
+            next;
+          }
+          $config{$field} .= $_;
+          next;
+        }
         next if(/^\s*$/ || /^\s*\#/);
         if(/\s*\[(.+)\]/){
             $field = $1;
@@ -414,6 +428,12 @@ sub readConfig{
 #		print "$config{$field}\n";
                 next;
                 }
+# Start Processing a block of text.
+        if(substr($_,0,1) eq "\""){
+          $processingString = 1;
+          $config{$field} = $_;
+          next;
+        }
         if(substr($_,0,1) eq "\'"){
                 $config{$field} = eval $_;
 #		print "$config{$field}\n";
